@@ -19,6 +19,8 @@ jobs:
         run: python -m evals.score
       - name: Release gate on the current prompt
         run: python -m evals.score --gate sim_v1
+      - name: Release gate on the fixed template fallback
+        run: python -m evals.score --gate template_fixed
       - name: The gate must block the regressed prompt
         run: |
           if python -m evals.score --gate sim_v2; then

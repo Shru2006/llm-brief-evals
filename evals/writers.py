@@ -1,7 +1,10 @@
 """Brief writers: the systems under test.
 
-* template            - the exact rule-based fallback shipped in the first home
+* template_before_fix - the rule-based fallback as first shipped in the first home
                         buyer project. Deterministic and real.
+* template_fixed      - the same template after the fix this harness prompted:
+                        reason codes are rendered only if they match a known
+                        label and a short value; anything else is withheld.
 * sim_clean           - a simulated LLM: varied, faithful paraphrases, no faults.
                         Used to measure false positives of the checks.
 * sim_v1 / sim_v2     - simulated LLM under two prompt versions. Each fault is
@@ -15,9 +18,10 @@ Every writer returns (brief, labels) where labels lists injected faults as
 """
 import json
 import random
+import re
 
 from evals.config import LLM_MODEL, PROMPTS_DIR
-from evals.golden_set import REASONS
+from evals.golden_set import REASONS, WATCH_OUTS
 
 # --------------------------------------------------------------------------- template
 
@@ -28,6 +32,35 @@ def template_brief(payload: dict) -> str:
     lines += [f"- {r}" for r in payload["reason_codes"]]
     if payload["watch_out"]:
         lines += ["**Watch out**", f"- {payload['watch_out']}"]
+    lines += ["**Suggested conversation opener**",
+              "- \"We noticed you've been exploring home buying. Would a quick chat about "
+              "your borrowing power and first home buyer options be useful?\""]
+    return "\n".join(lines)
+
+
+# Mirrors is_valid_reason() in first-home-buyer-lead-intelligence/src/lead_brief.py,
+# with this golden set's labels as the allowlist.
+_KNOWN_LABELS = {label for label, _, _ in REASONS.values()} | {label for label, _ in WATCH_OUTS}
+_REASON = re.compile(r"^(?P<label>.+) \((?P<value>[^()]*)\)$")
+_VALUE = re.compile(r"^(?:[-+]?\$?[\d,]+(?:\.\d+)?%?(?: months)?|[A-Za-z_]{1,20}(?: [A-Za-z_]{1,20})?)$")
+
+
+def is_valid_reason(text) -> bool:
+    if not isinstance(text, str) or len(text) > 120:
+        return False
+    m = _REASON.match(text)
+    return bool(m and m["label"] in _KNOWN_LABELS and _VALUE.match(m["value"]))
+
+
+def template_fixed_brief(payload: dict) -> str:
+    reasons = [r for r in payload["reason_codes"] if is_valid_reason(r)]
+    watch_out = payload.get("watch_out") if is_valid_reason(payload.get("watch_out")) else None
+    withheld = len(payload["reason_codes"]) - len(reasons) + int(bool(payload.get("watch_out")) and not watch_out)
+    lines = ["**Why this customer**", *[f"- {r}" for r in reasons]]
+    if withheld:
+        lines.append("- _A reason code was withheld because it failed validation._")
+    if watch_out:
+        lines += ["**Watch out**", f"- {watch_out}"]
     lines += ["**Suggested conversation opener**",
               "- \"We noticed you've been exploring home buying. Would a quick chat about "
               "your borrowing power and first home buyer options be useful?\""]

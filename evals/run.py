@@ -12,9 +12,9 @@ import random
 
 from evals.config import RUNS_DIR, SEED, ensure_dirs
 from evals.golden_set import load
-from evals.writers import PROFILES, claude_brief, simulated_brief, template_brief
+from evals.writers import PROFILES, claude_brief, simulated_brief, template_brief, template_fixed_brief
 
-OFFLINE_WRITERS = ["template", *PROFILES]
+OFFLINE_WRITERS = ["template_before_fix", "template_fixed", *PROFILES]
 
 
 def generate(writer: str, prompt: str = "brief_v1.md") -> list[dict]:
@@ -22,8 +22,10 @@ def generate(writer: str, prompt: str = "brief_v1.md") -> list[dict]:
     rows = []
     for case in load():
         p = case["payload"]
-        if writer == "template":
+        if writer == "template_before_fix":
             brief, labels = template_brief(p), []
+        elif writer == "template_fixed":
+            brief, labels = template_fixed_brief(p), []
         elif writer in PROFILES:
             brief, labels = simulated_brief(p, writer, r)
         elif writer == "claude":  # pragma: no cover - live only
@@ -37,7 +39,7 @@ def generate(writer: str, prompt: str = "brief_v1.md") -> list[dict]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--writer", default="offline", help="template, sim_clean, sim_v1, sim_v2, claude or offline")
+    parser.add_argument("--writer", default="offline", help="template_before_fix, template_fixed, sim_clean, sim_v1, sim_v2, claude or offline")
     parser.add_argument("--prompt", default="brief_v1.md")
     args = parser.parse_args()
     ensure_dirs()
