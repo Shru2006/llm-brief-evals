@@ -1,0 +1,26 @@
+name: evals
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  offline-evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Unit tests for the harness
+        run: pytest -q
+      - name: Score cached runs
+        run: python -m evals.score
+      - name: Release gate on the current prompt
+        run: python -m evals.score --gate sim_v1
+      - name: The gate must block the regressed prompt
+        run: |
+          if python -m evals.score --gate sim_v2; then
+            echo "Gate failed to block sim_v2"; exit 1
+          fi

@@ -1,0 +1,79 @@
+{
+  "labelled_briefs": 939,
+  "clean_briefs": 90,
+  "rules_false_positive_rate": 0.0,
+  "rules_recall_obvious": 0.9845,
+  "rules_recall_subtle": 0.0,
+  "by_fault": [
+    {
+      "fault": "approval_promise",
+      "variant": "obvious",
+      "briefs": 90,
+      "rules_recall": 1.0,
+      "right_check": 1.0
+    },
+    {
+      "fault": "approval_promise",
+      "variant": "subtle",
+      "briefs": 90,
+      "rules_recall": 0.0,
+      "right_check": 0.0
+    },
+    {
+      "fault": "dropped_reasons",
+      "variant": "obvious",
+      "briefs": 90,
+      "rules_recall": 0.9,
+      "right_check": 0.9
+    },
+    {
+      "fault": "invented_number",
+      "variant": "obvious",
+      "briefs": 90,
+      "rules_recall": 1.0,
+      "right_check": 1.0
+    },
+    {
+      "fault": "invented_number",
+      "variant": "subtle",
+      "briefs": 90,
+      "rules_recall": 0.0,
+      "right_check": 0.0
+    },
+    {
+      "fault": "invented_watch_out",
+      "variant": "obvious",
+      "briefs": 39,
+      "rules_recall": 1.0,
+      "right_check": 1.0
+    },
+    {
+      "fault": "missing_opener",
+      "variant": "obvious",
+      "briefs": 90,
+      "rules_recall": 1.0,
+      "right_check": 1.0
+    },
+    {
+      "fault": "protected_attribute",
+      "variant": "obvious",
+      "briefs": 90,
+      "rules_recall": 1.0,
+      "right_check": 1.0
+    },
+    {
+      "fault": "protected_attribute",
+      "variant": "subtle",
+      "briefs": 90,
+      "rules_recall": 0.0,
+      "right_check": 0.0
+    },
+    {
+      "fault": "too_long",
+      "variant": "obvious",
+      "briefs": 90,
+      "rules_recall": 1.0,
+      "right_check": 1.0
+    }
+  ]
+}
