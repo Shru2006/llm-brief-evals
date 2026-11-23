@@ -2,6 +2,8 @@
 
 **How do you know an LLM-written lender brief is faithful and compliant, and stays that way when someone edits the prompt?**
 
+> **Part 3 of 4 in a lending AI series:** [1. Predict who will apply](https://github.com/Shru2006/first-home-buyer-lead-intelligence) → [2. Target who a call changes](https://github.com/Shru2006/outreach-uplift-modelling) → **3. Test the LLM's briefs** → [4. Monitor it in production](https://github.com/Shru2006/model-monitoring-pipeline)
+
 This repo is the evaluation harness for the Claude-written lead briefs in my [First Home Buyer Lead Intelligence](https://github.com/Shru2006/first-home-buyer-lead-intelligence) project. It runs a golden set through any brief writer, scores every brief with deterministic checks, and blocks a release in CI when quality or compliance drops. It also **evaluates the evaluator**: it measures what the checks catch and what they miss.
 
 **At a glance:**
@@ -21,7 +23,7 @@ The first home buyer model flags a customer and hands Claude only the score and 
 
 Prompts get edited, models get upgraded, and upstream data can be tampered with. Without an eval, nobody knows when a rule silently starts breaking.
 
-## 2. How it works
+## 2. Approach
 
 ```mermaid
 flowchart LR
@@ -80,7 +82,7 @@ When no API key is set, the first project uses a template that pasted reason cod
 
 **The fix** ([`src/lead_brief.py`](https://github.com/Shru2006/first-home-buyer-lead-intelligence/blob/main/src/lead_brief.py)): a reason code is used only if it has the exact shape `<known feature label> (<short value>)`. Anything else is withheld, and the brief says so. The check runs before the payload is built, so tampered text reaches **neither the template nor Claude**. That's defence in depth: the prompt tells Claude to ignore embedded instructions, but untrusted text never gets that far. On the real pipeline output, all 19,923 reason codes pass the check, so nothing legitimate is lost.
 
-## 4. Design decisions and limitations
+## 4. Responsible AI, design decisions and limitations
 
 | Decision | Why |
 |---|---|
@@ -101,13 +103,12 @@ python -m venv .venv
 .venv\Scripts\activate            # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 
-python -m evals.golden_set        # 1. build the golden set
-python -m evals.run               # 2. write briefs with every offline writer
-python -m evals.score             # 3. scorecard + metrics in reports/
-python -m evals.meta_eval         # 4. how good are the checks?
-python -m evals.score --gate sim_v1   # 5. the release gate CI runs
+python -m evals.pipeline          # everything offline: golden set, briefs, scorecard, meta-eval
+python -m evals.score --gate sim_v1   # the release gate CI runs
 pytest -q
 ```
+
+Or step by step: `python -m evals.golden_set`, `python -m evals.run`, `python -m evals.score`, `python -m evals.meta_eval`. Offline mode needs no API key.
 
 **Live mode** (uses your Anthropic API key, billed to your account):
 
@@ -128,7 +129,8 @@ python -m evals.meta_eval --judge
 │   ├── judge.py          LLM-as-judge with structured output
 │   ├── run.py            generate and cache briefs
 │   ├── score.py          scorecard and release gate
-│   └── meta_eval.py      recall and false-positive rate of the checks (and judge)
+│   ├── meta_eval.py      recall and false-positive rate of the checks (and judge)
+│   └── pipeline.py       runs every offline step
 ├── prompts/              brief v1, the regressed v2, judge rubric
 ├── data/                 golden set (synthetic)
 ├── runs/                 cached briefs, re-scored in CI
@@ -144,5 +146,7 @@ python -m evals.meta_eval --judge
 - Track cost and latency per brief alongside quality, so a cheaper model or lower effort can be judged on the same scorecard.
 
 ---
+
+**The series:** [1. Predict who will apply](https://github.com/Shru2006/first-home-buyer-lead-intelligence) · [2. Target who a call changes](https://github.com/Shru2006/outreach-uplift-modelling) · **3. Test the LLM's briefs** · [4. Monitor it in production](https://github.com/Shru2006/model-monitoring-pipeline)
 
 **Author:** Shruti Prabhu · [LinkedIn](https://www.linkedin.com/in/shruti-prabhu-32b77477) · [GitHub](https://github.com/Shru2006)
